@@ -6,6 +6,13 @@ If you use an agent, run it from the `pi-lens` root so it picks up `AGENTS.md` a
 
 ## Quick start
 
+With Nix flakes enabled, run `nix develop` for Node.js 24 and its bundled npm
+on x86_64 Linux, ARM64 Linux, or Apple Silicon macOS. If you use direnv with
+Nix integration, run `direnv allow` to load the shell automatically.
+Dependencies still need `npm install`; the shell does not install them.
+Run `nix fmt` to format `flake.nix` with Alejandra; project sources still use
+`npm run fmt`.
+
 ```bash
 # 1. Install dependencies
 npm install

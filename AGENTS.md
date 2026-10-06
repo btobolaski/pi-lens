@@ -738,6 +738,9 @@ spans and never re-search stale bytes.
 </important>
 ## Commands and gates
 
+See [CONTRIBUTING.md — Quick start](CONTRIBUTING.md#quick-start) for the Nix
+development shell, direnv integration, and flake formatting commands.
+
 Use a pinned home/data environment for probes and child processes.
 
 ```text
