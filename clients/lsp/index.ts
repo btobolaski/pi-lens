@@ -1238,7 +1238,7 @@ async function collectWorkspaceDiagnosticFiles(
 	if (isAtOrAboveHomeDir(root, homeDir)) return files;
 	const ignoreMatcher = getProjectIgnoreMatcher(root);
 	// #703: prime the tracked-files set once before the walk so a tracked file
-	// matching a `.gitignore`/global pattern still gets its workspace
+	// matching a `.gitignore` pattern still gets its workspace
 	// diagnostics pulled. Fail-open on no-git/spawn failure.
 	await ignoreMatcher.ensureTrackedIndex();
 	async function walk(current: string): Promise<void> {

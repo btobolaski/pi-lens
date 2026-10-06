@@ -4,8 +4,10 @@
  * #703, the sibling "tracked files" set that lets `getProjectIgnoreMatcher`
  * (`file-utils.ts`) honor the OTHER half of the same git semantic.
  *
+ * This tracked-file exemption applies only to `.gitignore`, never to global
+ * or project pi-lens inspection preferences.
  * THE critical git semantic this exists to respect: a TRACKED file is never
- * ignored, even when a `.gitignore` pattern matches it (pi-lens's own
+ * ignored by Git, even when a `.gitignore` pattern matches it (pi-lens's own
  * committed `clients/deps/*.js` vendored sources match the repo's `*.js`
  * ignore pattern and MUST stay graph/map nodes) — which is why this asks git
  * itself (`ls-files --others --ignored --exclude-standard` for the untracked

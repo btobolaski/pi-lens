@@ -130,7 +130,9 @@ import {
 // v8 (#1070): call/reference evidence now records call-like vs type-only
 // references and tree-sitter query coverage, so call-graph consumers cannot
 // mistake incomplete extraction for a clean zero.
-export const REVIEW_GRAPH_VERSION = "v8";
+// v9: global inspection ignores now exclude tracked files. Reject old
+// snapshots before blind reads can return nodes from the previous population.
+export const REVIEW_GRAPH_VERSION = "v9";
 const MAIN_KINDS = new Set([
 	"jsts",
 	"python",
@@ -918,7 +920,7 @@ export function getReviewGraphCacheIdentity(
 	const cached = _workspaceGraphCache.get(normalizeMapKey(cwd));
 	if (!cached) return undefined;
 	touchWorkspaceGraph(normalizeMapKey(cwd));
-	// #1088: `version` is the constant schema tag ("v8" today) — identical for
+	// #1088: `version` is the constant schema tag — identical for
 	// every live graph, so comparing it can never detect that `graph` is a
 	// stale instance the workspace cache has since replaced (e.g. a concurrent
 	// build racing between this caller's projection snapshot and its identity

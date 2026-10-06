@@ -399,11 +399,10 @@ export const EXCLUDED_DIRS = [
  * `createProjectIgnoreMatcher`'s ordering comment. The layer determines
  * whether a winning positive match is subject to git's "a tracked file is
  * never ignored" rule:
- *   - `global` / `gitignore` emulate git itself, so they inherit that rule —
- *     a winning match from either NEVER excludes a file git tracks.
- *   - `pilens` (`.pi-lens.json`'s `ignore` field) is pi-lens-native user
- *     intent ("don't analyze this"), not a git emulation, so it excludes
- *     regardless of tracked status.
+ *   - `gitignore` emulates git itself, so a winning match NEVER excludes
+ *     a file git tracks.
+ *   - `global` and `pilens` are explicit pi-lens inspection preferences,
+ *     so they exclude regardless of tracked status.
  *
  * `pilens` patterns can come from the root `.pi-lens.json` (loaded once at
  * matcher-construction time in `createProjectIgnoreMatcher`) OR from a
@@ -849,15 +848,12 @@ function buildProjectIgnoreMatcher(
 			}
 
 			if (!verdict.ignored) return false;
-			// #703 layer semantics: a winning positive match from `global` or
-			// `gitignore` emulates git, so it inherits git's "a tracked file is
-			// never ignored" rule. A winning match from `pilens` is pi-lens-native
-			// intent and stays excluded regardless of tracked status. Directory
-			// queries are never tracked-rescued — the tracked set is a file-id
-			// set, not a directory set.
+			// Only .gitignore inherits Git's "a tracked file is never ignored"
+			// rule. Global and project config express explicit inspection opt-outs
+			// and stay excluded after priming. Directories are never rescued.
 			if (
 				!isDirectory &&
-				verdict.layer !== "pilens" &&
+				verdict.layer === "gitignore" &&
 				isTrackedAndRescued(resolved)
 			) {
 				return false;
@@ -876,9 +872,9 @@ export function createProjectIgnoreMatcher(
 	// Precedence is gitignore order: LATER patterns override earlier ones. So
 	// global (lowest) → project .gitignore → project .pi-lens.json (highest),
 	// which lets a project `!negation` re-include a globally-ignored path (#252).
-	// Each layer is tagged (#703) so `isIgnored` can tell a git-emulating match
-	// (`global`/`gitignore` — subject to "a tracked file is never ignored")
-	// apart from pi-lens-native intent (`pilens` — excludes regardless).
+	// Layer tags distinguish Git's tracked-file exemption (`gitignore`) from
+	// explicit inspection preferences (`global`/`pilens`), which exclude tracked
+	// files too.
 	const patterns = [
 		...parseGitignoreContent(globalPatterns.join("\n"), "global"),
 		...readGitignorePatterns(resolvedRoot, "gitignore"),

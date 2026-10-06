@@ -1,15 +1,15 @@
 /**
  * #703: `getProjectIgnoreMatcher` must honor git's "a tracked file is never
- * ignored" rule for the `global`/`gitignore` layers, while still letting a
- * `.pi-lens.json` (`pilens` layer) pattern exclude a tracked file — that
- * layer is pi-lens-native intent, not a git emulation.
+ * ignored" rule for `.gitignore`, while global and project pi-lens config
+ * patterns exclude tracked files. Both config layers express inspection
+ * preferences, not Git ignore policy.
  *
  * These are real-git-repo tests (execFileSync git init/add/commit), following
  * the same fixture shape as `git-tracked-ignore.test.ts` (#701).
  */
 import { execFileSync } from "../support/git-fixture-env.js";
 import * as path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	_resetTrackedFilesCacheForTests,
 	parseTrackedFilesOutput,
@@ -42,6 +42,7 @@ describe("tracked-aware ignore matcher (#703)", () => {
 		resetProjectLensConfigCache();
 	});
 	afterEach(() => {
+		vi.unstubAllEnvs();
 		_resetTrackedFilesCacheForTests();
 		resetProjectLensConfigCache();
 	});
@@ -90,6 +91,47 @@ describe("tracked-aware ignore matcher (#703)", () => {
 			env.cleanup();
 		}
 	});
+
+	// Regression: tracked-file rescue must not undo an explicit global opt-out
+	// after a background walker primes Git's index, including YAML documents.
+	it.each([
+		["yaml", "name: ignored\n"],
+		["yml", "name: ignored\n"],
+		["py", "name = 'ignored'\n"],
+	])(
+		"global ignores keep tracked .%s files out of scans after priming",
+		async (extension, content) => {
+			const env = setupTestEnvironment("pi-lens-tracked-ignore-global-");
+			try {
+				initGitRepo(env.tmpDir);
+				const relativePath = `src/ignored.${extension}`;
+				const trackedPath = createTempFile(env.tmpDir, relativePath, content);
+				const keptPath = createTempFile(
+					env.tmpDir,
+					"src/kept.py",
+					"name = 'kept'\n",
+				);
+				commitFile(env.tmpDir, relativePath);
+				const globalConfigPath = createTempFile(
+					env.tmpDir,
+					"global-config.json",
+					JSON.stringify({ ignore: [`**/ignored.${extension}`] }),
+				);
+				vi.stubEnv("PI_LENS_CONFIG_PATH", globalConfigPath);
+
+				const matcher = getProjectIgnoreMatcher(env.tmpDir);
+				expect(matcher.isIgnored(trackedPath, false)).toBe(true);
+				await matcher.ensureTrackedIndex();
+				expect(matcher.isIgnored(trackedPath, false)).toBe(true);
+
+				const files = await collectSourceFilesAsync(env.tmpDir);
+				expect(files).not.toContain(trackedPath);
+				expect(files).toContain(keptPath);
+			} finally {
+				env.cleanup();
+			}
+		},
+	);
 
 	it("still ignores a tracked file matching a .pi-lens.json pattern (pilens layer excludes regardless of tracked status)", async () => {
 		const env = setupTestEnvironment("pi-lens-tracked-ignore-pilens-");

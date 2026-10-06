@@ -344,7 +344,7 @@ export async function collectSourceFilesForWarmup(
 	const root = path.resolve(rootDir);
 	const ignoreMatcher = getProjectIgnoreMatcher(root);
 	// #703: prime the tracked-files set once before the walk so a tracked file
-	// matching a `.gitignore`/global pattern still counts toward language
+	// matching a `.gitignore` pattern still counts toward language
 	// detection. Fail-open on no-git/spawn failure.
 	await ignoreMatcher.ensureTrackedIndex();
 	const stack = [root];

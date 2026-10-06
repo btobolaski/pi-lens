@@ -26,6 +26,7 @@ import {
 	buildOrUpdateGraph,
 	clearGraphCache,
 	clearReviewGraphWorkspaceCache,
+	REVIEW_GRAPH_VERSION,
 } from "../../clients/review-graph/builder.js";
 import { computeImpactCascade } from "../../clients/review-graph/query.js";
 import type { ReviewGraph } from "../../clients/review-graph/types.js";
@@ -161,7 +162,7 @@ describe(`cascade graph rebuild event-loop occupancy (~${TREE_SIZE} files)`, () 
 
 function emptyGraph(): ReviewGraph {
 	return {
-		version: "v8",
+		version: REVIEW_GRAPH_VERSION,
 		builtAt: new Date().toISOString(),
 		nodes: new Map(),
 		edges: [],

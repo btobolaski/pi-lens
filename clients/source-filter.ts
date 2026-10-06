@@ -878,7 +878,7 @@ export async function collectSourceFilesWithBudgetAsync(
 			// past the ~50ms event-loop budget; see PERF-AUDIT.md.
 			budgetMs: Math.max(1, options?.budgetMs ?? 8),
 			// #703: prime the tracked-files set once before the walk so a tracked
-			// file matching a `.gitignore`/global pattern still surfaces. Fail-open
+			// file matching a `.gitignore` pattern still surfaces. Fail-open
 			// on no-git/spawn failure.
 			beforeWalk: () => cfg.ignoreMatcher.ensureTrackedIndex(),
 		},

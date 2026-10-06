@@ -115,7 +115,7 @@ Hide the diagnostics widget by default, run formatting immediately after write/e
 
 `turnEnd.madge.enabled` (default `false`) runs the per-turn-end madge circular-dependency check on import-changed files. It is off by default because that pass only writes debug output — user-facing madge diagnostics come from the session-start scan cache and the `lens_diagnostics` extractor — and its subprocess spawns dominated the turn-end latency tail (#766). Enable it with `--lens-turn-end-madge` or `turnEnd.madge.enabled: true` if you want the per-edit circular-dependency note.
 
-`ignore` is an array of gitignore-style glob patterns excluded from pi-lens scans across **every** project — the global counterpart to the per-project `.pi-lens.json` `ignore` below. Precedence is lowest: a project `.gitignore` or `.pi-lens.json` (including a `!negation`) overrides it, so you can globally hide e.g. `scratch/**` and still re-include it in one repo.
+`ignore` is an array of gitignore-style glob patterns excluded from automatic pi-lens inspection across **every** project, including Git-tracked files. For example, `"ignore": ["**/*.yaml", "**/*.yml"]` disables automatic YAML inspection, including yamllint. Unlike `.gitignore`, global and project pi-lens ignores are explicit inspection preferences, so tracking a file does not re-enable it. Precedence is lowest: a project `.gitignore` or `.pi-lens.json` (including a `!negation`) overrides it, so you can globally hide e.g. `scratch/**` and still re-include it in one repo. Explicit diagnostic requests naming a file still inspect it.
 
 Turn subsystems off globally instead of retyping flags every session:
 
@@ -205,7 +205,7 @@ still inheriting the repo root's `autofix.enabled`.
 
 ### `ignore`
 
-Array of gitignore-style glob patterns. Any path matching is excluded from every diagnostic scan (LSP walk, fact-rules, tree-sitter, jscpd, knip, review graph, source-filter). Useful for vendored code, generated files, or per-project noise you want to silence without editing `.gitignore` (which would also affect git itself). These patterns take precedence over the global `~/.pi-lens/config.json` `ignore`, so a `!negation` here can re-include a globally-ignored path.
+Array of gitignore-style glob patterns. These inspection preferences also exclude Git-tracked files; tracking a file does not override them. Any path matching is excluded from every diagnostic scan (LSP walk, fact-rules, tree-sitter, jscpd, knip, review graph, source-filter). Useful for vendored code, generated files, or per-project noise you want to silence without editing `.gitignore` (which would also affect git itself). These patterns take precedence over the global `~/.pi-lens/config.json` `ignore`, so a `!negation` here can re-include a globally-ignored path.
 
 In a monorepo, `ignore` **layers** across nested `.pi-lens.json` files the same way nested `.gitignore`s do: a `.pi-lens.json` inside a package directory (e.g. `packages/a/.pi-lens.json`) contributes its own `ignore` patterns for files under that package, in addition to the repo-root config's patterns — each anchored relative to its own directory, and a nested package's patterns winning over the root's for files inside that package. A package-local config's `ignore` patterns never affect files outside its own directory.
 

@@ -459,7 +459,7 @@ async function walkSourceCountAsync(
 			// work under 50ms (the perceptual threshold for "instant" keystrokes).
 			budgetMs: opts.budgetMs ?? 8,
 			// #703: prime the tracked-files set ONCE before the walk (not per file)
-			// so a tracked file matching a `.gitignore`/global pattern isn't dropped
+			// so a tracked file matching a `.gitignore` pattern isn't dropped
 			// from the startup source-file count. Fail-open: resolves even when git
 			// is absent, and `isIgnored` degrades to pattern-only if this never
 			// resolves before a caller inspects results.

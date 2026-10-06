@@ -189,7 +189,7 @@ export async function snapshotProjectFiles(
 	const projectRoot = path.resolve(root);
 	const ignoreMatcher = getProjectIgnoreMatcher(projectRoot);
 	// #703: prime the tracked-files set once before the walk so a tracked file
-	// matching a `.gitignore`/global pattern still shows up in the autofix
+	// matching a `.gitignore` pattern still shows up in the autofix
 	// snapshot. Fail-open on no-git/spawn failure.
 	await ignoreMatcher.ensureTrackedIndex();
 	const stack = [projectRoot];

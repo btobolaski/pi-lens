@@ -2,6 +2,7 @@ import { execFileSync } from "../support/git-fixture-env.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FactStore } from "../../clients/dispatch/fact-store.js";
 import { getProjectDataDir } from "../../clients/file-utils.js";
@@ -438,6 +439,49 @@ describe("review graph service", () => {
 		}
 	});
 
+	it("rejects v8 snapshots that can retain globally ignored tracked files before any rebuild", () => {
+		const env = setupTestEnvironment("pi-lens-review-graph-v8-migrate-");
+		try {
+			expect(REVIEW_GRAPH_VERSION).not.toBe("v8");
+			const ignoredPath = createTempFile(
+				env.tmpDir,
+				"src/ignored.ts",
+				"export const ignored = 1;\n",
+			);
+			const cacheDir = path.join(getProjectDataDir(env.tmpDir), "cache");
+			fs.mkdirSync(cacheDir, { recursive: true });
+			fs.writeFileSync(
+				path.join(cacheDir, "review-graph.json.gz"),
+				gzipSync(
+					JSON.stringify({
+						version: "v8",
+						builtAt: "2026-10-06T00:00:00.000Z",
+						signature: "before-global-ignore-fix",
+						nodes: [
+							[
+								ignoredPath,
+								{
+									id: ignoredPath,
+									kind: "file",
+									filePath: ignoredPath,
+									language: "jsts",
+								},
+							],
+						],
+						edges: [],
+					}),
+				),
+			);
+
+			// Blind reads must reject the old population without waiting for a build.
+			expect(getCachedReviewGraph(env.tmpDir)).toBeUndefined();
+			expect(isReviewGraphMigrationNeeded(env.tmpDir)).toBe(true);
+		} finally {
+			clearReviewGraphWorkspaceCache();
+			env.cleanup();
+		}
+	});
+
 	it("refs #655: a v3 snapshot (pre-collision-safe-ID scheme) is detected as stale and safely rebuilt, never misread", async () => {
 		// #655's v4 bump changed the symbol-node ID shape from `<file>:<name>` to
 		// `<file>:<name>:<kind>:<startLine>`. A real v3 snapshot's nodes/edges still
@@ -484,7 +528,7 @@ describe("review graph service", () => {
 				await import("../../clients/review-graph/builder.js");
 			expect(getCachedReviewGraph(env.tmpDir)).toBeUndefined();
 
-			// A real build produces a fresh v8 graph with the new ID shape, not the
+			// A real build produces a current-version graph with the new ID shape, not the
 			// old one, and is no longer flagged as needing migration.
 			createTempFile(
 				env.tmpDir,
